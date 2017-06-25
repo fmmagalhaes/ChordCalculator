@@ -1,6 +1,10 @@
 
 public class Chords {
 	
+	static final String[] SYMBOLS = { "4", "5", "6", "7", "8", "9", "11", "M", "m", "add", "maj" };
+	static final String[] NOTES = { "C", "C#", "D", "Eb", "E", "F", "F#", "G", "G#", "A", "Bb", "B" };
+	static final String[] NOTES_SHARP_FLAT = { "C", "D", "E", "F", "G", "A", "B", "#", "b" };
+	
 	//intervals
 	static final int ROOT_SEMITONES = 0;
 	static final int MINOR_SECOND_SEMITONES = 1;

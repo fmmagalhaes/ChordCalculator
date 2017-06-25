@@ -3,6 +3,13 @@ import java.util.Map;
 
 public class Utils {
 	
+	public static boolean arrayContains(String[] array, String str){
+		for (String s : array)
+			if(s.equals(str))
+				return true;
+		return false;		
+	}
+	
 	public static String removeExpressions(String str, String[] array){
 		for (String expr : array)
 			str = str.replace(expr, "");

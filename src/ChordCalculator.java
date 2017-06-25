@@ -6,30 +6,18 @@ import java.util.Map.Entry;
 
 public class ChordCalculator {
 
-	public static final String[] SYMBOLS = { "4", "5", "6", "7", "8", "9", "M", "m", "add", "maj" };
-	public static final String[] NOTES = { "C", "C#", "D", "Eb", "E", "F", "F#", "G", "G#", "A", "Bb", "B" };
-	public static final String[] NOTES_SHARP_FLAT = { "C", "D", "E", "F", "G", "A", "B", "#", "b" };
-
 	private Map<Integer, String> intTonote; // maps 0 to C, 1 to C#, 2 to D, etc
-	private Map<String, String> notes;
 	private Map<List<String>, String> composition; // maps a list of notes to the chord they form
 	//<list, string> and not <string, list> because otherwise it would be necessary
 	//to keep <A#, A# D F> and <Bb, A# D F> , etc.
 
+	/**
+	 * Constructs a ChordCalculator which allows a set of operations
+	 */
 	public ChordCalculator() {
 		intTonote = new HashMap<Integer, String>();
-		notes = new HashMap<String, String>();
 		composition = new HashMap<List<String>, String>();
 		fillMaps();
-		for (String chord : intTonote.values()) {
-			getComposition(chord);
-			getComposition(chord + "7");
-			getComposition(chord + "m");
-			getComposition(chord + "m7");
-			getComposition(chord + "M7");
-			getComposition(chord + "5");
-			getComposition(chord + "9");
-		}
 	}
 
 	/**
@@ -82,10 +70,10 @@ public class ChordCalculator {
 		int n = (Integer) Utils.getKeyFromValue(intTonote, root);
 		List<String> notes_aux = new LinkedList<String>();
 
-		String symbols = getSymbols(chord);
+		//String symbols = getSymbols(chord);
 		int[] compositionSemitones = null;
 
-		if (notes.containsKey(chord))
+		if (Utils.arrayContains(Chords.NOTES, chord))
 			compositionSemitones = Chords.MAJOR_TRIAD_CHORD;
 		else if (isMinor(chord) && isSeventh(chord)){
 			compositionSemitones = Chords.MINOR_SEVENTH_CHORD;
@@ -98,14 +86,20 @@ public class ChordCalculator {
 			compositionSemitones = Chords.MINOR_NINTH_CHORD;
 		else if (isMajor(chord) && isNinth(chord))
 			compositionSemitones = Chords.MAJOR_NINTH_CHORD;
+		else if (isMajor(chord) && isEleventh(chord))
+			compositionSemitones = Chords.MAJOR_ELEVENTH_CHORD;
+		else if (isMinor(chord) && isEleventh(chord))
+			compositionSemitones = Chords.MINOR_ELEVENTH_CHORD;
 		else if (isMinor(chord))
 			compositionSemitones = Chords.MINOR_TRIAD_CHORD;
 		else if (isSeventh(chord))
 			compositionSemitones = Chords.DOMINANT_SEVENTH_CHORD;
-		else if (isAddedNinth(chord))
-			compositionSemitones = Chords.ADDED_NINTH_CHORD;
 		else if (isNinth(chord))
 			compositionSemitones = Chords.DOMINANT_NINTH_CHORD;
+		else if (isAddedNinth(chord))
+			compositionSemitones = Chords.ADDED_NINTH_CHORD;
+		else if (isEleventh(chord))
+			compositionSemitones = Chords.DOMINANT_ELEVENTH_CHORD;
 		else if (isPowerChord(chord))
 			compositionSemitones = Chords.POWER_CHORD;
 
@@ -118,30 +112,34 @@ public class ChordCalculator {
 
 	private void fillMaps() {
 		int i = 0;
-		for (String note : NOTES)
+		for (String note : Chords.NOTES)
 			intTonote.put(i++, note);
-
-		for (int note = 0; note < 12; note++) {
-			String str = "";
-			for (int n = 0; n < 12; n++) {
-				if (n != 1 && n != 3 && n != 6 && n != 8 && n != 10 && n != note)
-					str += intTonote.get(n) + (Math.abs(note - n + 12)) % 12 + " ";
-			}
-			notes.put(intTonote.get(note), str.trim());
+		
+		for (String chord : intTonote.values()) {
+			getComposition(chord);
+			getComposition(chord + "m");
+			
+			getComposition(chord + "7");
+			getComposition(chord + "m7");
+			getComposition(chord + "M7");
+			
+			getComposition(chord + "5");
+			
+			getComposition(chord + "9");
+			getComposition(chord + "m9");
+			getComposition(chord + "M9");
+			getComposition(chord + "add9");
+			
+			getComposition(chord + "11");
+			getComposition(chord + "m11");
+			getComposition(chord + "M11");
 		}
-		notes.put("A#", notes.get("Bb"));
-		notes.put("D#", notes.get("Eb"));
-		notes.put("Cb", notes.get("B"));
-		notes.put("Db", notes.get("C#"));
-		notes.put("Fb", notes.get("E"));
-		notes.put("Gb", notes.get("F#"));
-		notes.put("Ab", notes.get("G#"));
 	}
 
 	// returns the root of the given chord
 	private String getRootNote(String chord) {
 		String root = chord;
-		for (String symbol : SYMBOLS)
+		for (String symbol : Chords.SYMBOLS)
 			root = root.replace(symbol, "");
 		return root;
 	}
@@ -149,7 +147,7 @@ public class ChordCalculator {
 	// returns the symbols of the given chord (ex: M7, 7, m7)
 	private String getSymbols(String chord) {
 		String symbols = chord;
-		for (String note : NOTES_SHARP_FLAT)
+		for (String note : Chords.NOTES_SHARP_FLAT)
 			symbols = symbols.replace(note, "");
 		return symbols;
 	}
@@ -166,6 +164,10 @@ public class ChordCalculator {
 		return note.contains("add9");
 	}
 
+	private boolean isEleventh(String note){
+		return note.contains("11");
+	}
+	
 	private boolean isNinth(String note) {
 		return note.contains("9");
 	}

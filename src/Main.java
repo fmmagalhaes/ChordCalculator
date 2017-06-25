@@ -20,14 +20,23 @@ public class Main {
 		String line = "";
 		while ((line = bis.readLine()) != null) {
 			line = line.trim();
-			String chordMatch = "[a-zA-Z](#|[a-zA-Z])*([0-9])?(M|m)?";
+			String chordMatch = "[a-zA-Z](#|[a-zA-Z])*([0-9]*)?(M|m)?";
 			if (line.matches((chordMatch + "( +)?\\+( +)?[0-9]([0-9])?"))) {
+				//SUM
 				String[] parts = line.split("\\+");
 				String chord = parts[0];
 				int n = Integer.parseInt(parts[1]);
 				String newchord = calc.addSemitones(chord, n);
 				System.out.println(newchord + "\n");
+			} else if (line.matches((chordMatch + "( +)?-( +)?[0-9]([0-9])?"))) {
+				//SUBTRACT
+				String[] parts = line.split("-");
+				String chord = parts[0];
+				int n = Integer.parseInt(parts[1]);
+				String newchord = calc.subtractSemitones(chord, n);
+				System.out.println(newchord + "\n");
 			} else if (line.matches((chordMatch))) {
+				//COMPOSITION
 				String chord = line;
 				List<String> list = calc.getComposition(chord);
 				String composition = "";
