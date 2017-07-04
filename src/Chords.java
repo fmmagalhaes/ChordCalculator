@@ -41,7 +41,6 @@ public class Chords {
 	
 	static final Integer[] MAJOR_SIXTH_CHORD = {ROOT_SEMITONES, MAJOR_THIRD_SEMITONES, PERFECT_FIFTH_SEMITONES,
 			MAJOR_SIXTH_SEMITONES}; //major_triad_chord + major_sixth_semitones
-
 	
 	static final Integer[] MINOR_SEVENTH_CHORD = {ROOT_SEMITONES, MINOR_THIRD_SEMITONES, PERFECT_FIFTH_SEMITONES,
 			MINOR_SEVENTH_SEMITONES }; //minor_triad_chord + minor_seventh_semitones
@@ -73,6 +72,4 @@ public class Chords {
 	static final Integer[] SUSPENDED_FOURTH_CHORD = {ROOT_SEMITONES, PERFECT_FOURTH_SEMITONES, PERFECT_FIFTH_SEMITONES};
 	
 	static final Integer[] POWER_CHORD = {ROOT_SEMITONES, PERFECT_FIFTH_SEMITONES};
-	
-	static final Integer[] SUSPENDED_CHORD = {ROOT_SEMITONES, PERFECT_FOURTH_SEMITONES, PERFECT_FIFTH_SEMITONES };
 }
