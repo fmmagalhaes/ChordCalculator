@@ -1,6 +1,8 @@
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -19,10 +21,12 @@ public class ChordCalculator {
 	 * 
 	 * @throws UnknownNoteException
 	 */
-	public ChordCalculator() throws UnknownNoteException {
+	public ChordCalculator() {
 		intTonote = new HashMap<Integer, String>();
 		composition = new HashMap<List<String>, String>();
-		fillMaps();
+		for (int i = 0; i<Chords.NOTES.length; i++)
+			intTonote.put(i, Chords.NOTES[i]);
+		//fillMaps();
 	}
 
 	/**
@@ -68,7 +72,11 @@ public class ChordCalculator {
 		for (String note : notes)
 			notes_aux.add(getRootNote(note) + getSymbols(note));
 
-		// TODO: just try composition.get(notes_aux). than execute this cycle
+		String chord = "";
+		chord = composition.get(notes_aux);
+		if (chord != null)
+			return chord;
+
 		for (Entry<List<String>, String> entry : composition.entrySet()) {
 			if (Utils.equalLists(entry.getKey(), notes_aux))
 				return entry.getValue();
@@ -82,6 +90,15 @@ public class ChordCalculator {
 	 * @throws UnknownNoteException
 	 */
 	public List<String> getComposition(String chord) throws UnknownNoteException {
+		String[] roots = chord.split("/");
+		String bassNote = "";
+		if (roots.length > 1)
+			try {
+				bassNote = getRootNote(roots[1]);
+			} catch (UnknownNoteException e) {
+			}
+
+		System.out.println(bassNote);
 		String root = getRootNote(chord);
 		int n = (Integer) Utils.getKeyFromValue(intTonote, root);
 
@@ -102,7 +119,7 @@ public class ChordCalculator {
 			else // eg dominant, flat five
 				compositionSemitones.add(Chords.MAJOR_THIRD_SEMITONES);
 
-			if (isAugmented(chord))
+			if (isAugmented(chord) || isAugmentedFifth(chord))
 				compositionSemitones.add(Chords.AUGMENTED_FIFTH_SEMITONES);
 			else if (isDiminished(chord) || isHalfDiminished(chord) || isJustDiminishedFifth(chord))
 				compositionSemitones.add(Chords.DIMINISHED_FIFTH_SEMITONES);
@@ -110,12 +127,17 @@ public class ChordCalculator {
 				compositionSemitones.add(Chords.PERFECT_FIFTH_SEMITONES);
 
 			// 6
-			if (isAddedSixth(chord))
-				compositionSemitones.add(Chords.MAJOR_SIXTH_SEMITONES);
+			if (isAddedSixth(chord)) {
+				if (isFlatSixth(chord))
+					compositionSemitones.add(Chords.AUGMENTED_FIFTH_SEMITONES);
+				else
+					compositionSemitones.add(Chords.MAJOR_SIXTH_SEMITONES);
+			}
 
 			// 7
-			if (isSeventh(chord) || (isNinth(chord) && !isAddedNinth(chord))
-					|| (isEleventh(chord) && !isAddedEleventh(chord))
+			if (isSeventh(chord)
+					|| (isNinth(chord) && !isAddedNinth(chord) && !isSharpNinth(chord) && !isFlatNinth(chord))
+					|| (isEleventh(chord) && !isAddedEleventh(chord) && !isSharpEleventh(chord))
 					|| (isThirteenth(chord) && !isAddedThirteenth(chord)))
 				if (isMajor(chord) || isMinorMajor(chord))
 					compositionSemitones.add(Chords.MAJOR_SEVENTH_SEMITONES);
@@ -127,7 +149,8 @@ public class ChordCalculator {
 					compositionSemitones.add(Chords.MINOR_SEVENTH_SEMITONES);
 
 			// 9
-			if (isNinth(chord) || (isEleventh(chord) && !isAddedEleventh(chord))
+			if ((isNinth(chord) || isAddedNinth(chord))
+					|| (isEleventh(chord) && !isAddedEleventh(chord) && !isSharpEleventh(chord))
 					|| (isThirteenth(chord) && !isAddedThirteenth(chord)))
 				if (isSharpNinth(chord))
 					compositionSemitones.add(Chords.SHARP_NINTH_SEMITONES);
@@ -163,60 +186,72 @@ public class ChordCalculator {
 		}
 
 		ArrayList<String> notes_aux = new ArrayList<String>();
+		if(!bassNote.isEmpty())
+			notes_aux.add(bassNote);
 		for (int semitones : compositionSemitones)
 			notes_aux.add(intTonote.get((n + semitones) % 12));
 
 		if (composition.get(notes_aux) == null)
 			composition.put(notes_aux, chord);
+		else
+			System.out.println("repeated");
 
 		return notes_aux;
 	}
 
-	private void fillMaps() throws UnknownNoteException {
-		int i = 0;
-		for (String note : Chords.NOTES)
-			intTonote.put(i++, note);
-
+	private void fillMaps() {
 		for (String chord : intTonote.values()) {
 			ArrayList<String> symbols = new ArrayList<String>();
 			String[] numbers = { "", "7", "9", "11", "13" };
-			String[] symbolsArray = { "m", "M", "mM", "+M", "dim", "aug" };
-			for (String n : numbers) {
+			String[] symbolsArray = { "", "m", "M", "mM", "+M", "dim", "aug" };
+			for (String n : numbers)
 				for (String symbol : symbolsArray)
 					symbols.add(symbol + n);
+
+			String[] moreSymbolsArray = { "sus2", "sus4", "add9", "add11", "add13", "7add11", "7add13" };
+			ListIterator<String> it = symbols.listIterator();
+			String symbol = "";
+			while (it.hasNext()) {
+				symbol = it.next();
+				for (String anotherSymbol : moreSymbolsArray) {
+					if (symbol.contains("13") && anotherSymbol.contains("add"))
+						continue;
+					if (symbol.contains("11") && anotherSymbol.matches("(?s).*add([0-5][7-9])*.*"))
+						continue;
+					if (symbol.contains("9") && anotherSymbol.contains("add") && !anotherSymbol.contains("add6"))
+						continue;
+					it.add(symbol + anotherSymbol);
+				}
 			}
-			// symbolsArray = {"5", "sus2", "sus4", "add9", "add11", "add13", };
-			for (String symbol : symbols)
-				getComposition(chord + symbol);
 
-			getComposition(chord + "dim");
-			getComposition(chord + "aug");
+			String[] evenMoreSymbolsArray = { "b5", "b7", "b9", "#5", "#7", "#9", "#11" };
+			it = symbols.listIterator();
+			while (it.hasNext()) {
+				symbol = it.next();
+				if (!symbol.isEmpty()) {
+					for (String anotherSymbol : evenMoreSymbolsArray)
+						it.add(symbol + anotherSymbol);
+				}
+			}
 
-			getComposition(chord + "5");
-			getComposition(chord + "add9");
+			symbols.add("5");
 
-			getComposition(chord + "7");
-			getComposition(chord + "m7");
-			getComposition(chord + "M7");
-			getComposition(chord + "aug7");
-			getComposition(chord + "dim7");
-			getComposition(chord + "mM7");
-			getComposition(chord + "+M7"); // augMaj
+			try {
+				for (String symb : symbols) {
+					if ((symb).matches("(?s).*[0-9][0-9][0-9]+.*"))
+						continue;
+					if ((symb).matches("(?s).*[2-9][0-9]+.*"))
+						continue;
+					if ((getSymbols(chord + symb)).matches("(?s).*(#|b)7.*"))
+						continue;
+					System.out.println(chord + symb);
+					System.out.println(getComposition(chord + symb));
+				}
 
-			getComposition(chord + "9");
-			getComposition(chord + "m9");
-			getComposition(chord + "M9");
-			getComposition(chord + "aug9");
-			getComposition(chord + "dim9");
-			getComposition(chord + "mM9");
-			getComposition(chord + "+M9");
-
-			getComposition(chord + "13");
-			getComposition(chord + "m13");
-			getComposition(chord + "M13");
-			getComposition(chord + "aug13");
-			getComposition(chord + "mM13");
-			getComposition(chord + "+M13");
+			} catch (Exception e) {
+				e.printStackTrace();
+				System.exit(0);
+			}
 		}
 	}
 
@@ -256,7 +291,7 @@ public class ChordCalculator {
 
 	// min maj aug dim
 	private boolean isMinor(String chord) {
-		return chord.replace("dim", "").replace("maj", "").contains("m") || chord.contains("min");
+		return chord.replace("dim", "").replace("dom", "").replace("maj", "").contains("m") || chord.contains("min");
 	}
 
 	private boolean isMajor(String chord) {
@@ -272,6 +307,7 @@ public class ChordCalculator {
 	}
 
 	private boolean isDiminished(String chord) {
+		chord = chord.replace("dom", "");
 		return !isHalfDiminished(chord) && !isJustDiminishedFifth(chord) && !isFlatNinth(chord)
 				&& (chord.contains("o") || chord.contains("°") || chord.contains("dim"));
 	}
@@ -282,7 +318,7 @@ public class ChordCalculator {
 	}
 
 	private boolean isDiminishedMajor(String chord) {
-		return chord.matches("(?s).*(dim|°|o)(M|maj).*");
+		return chord.replace("dom", "").matches("(?s).*(dim|°|o)(M|maj).*");
 	}
 
 	// suspended chords
@@ -301,7 +337,7 @@ public class ChordCalculator {
 
 	private boolean isAddedNinth(String chord) {
 		return !chord.matches("(?s).*7((/9)|(add(9|2))).*") // 7add9 = 9
-				&& (chord.matches("(?s).*(/|add)(9|2).*") || (getSymbols(chord).matches("2.*")
+				&& (chord.matches("(?s).*(/|add)(9|2).*") || (chord.matches("(?s).*2.*")
 						&& !chord.matches("(?s).*[0-9]2.*") && !isSuspendedSecond(chord)));
 	}
 
@@ -316,6 +352,7 @@ public class ChordCalculator {
 	}
 
 	// numbers
+	// TODO: check G5m
 	private boolean isPowerChord(String chord) {
 		return getSymbols(chord).matches("5|8");
 	}
@@ -337,17 +374,25 @@ public class ChordCalculator {
 	}
 
 	// flats/diminished
+	private boolean isSharpSixth(String chord) {
+		return chord.matches("(?s).*(+|#)6.*");
+	}
+
+	private boolean isFlatSixth(String chord) {
+		return chord.matches("(?s).*(-|b)6.*");
+	}
+
 	private boolean isFlatNinth(String chord) {
 		return chord.matches("(?s).*([0-9]+)(-|b|dim)9.*");
 	}
 
 	private boolean isJustDiminishedFifth(String chord) {
-		return chord.matches("(?s).*([0-9]+)(dim|m|-|b)5.*");
+		return chord.matches("(?s).*([0-9]+)(dim|m|-|b)5.*") || getSymbols(chord).matches("(?s).*((-|b)5).*");
 	}
 
 	// sharp/augmented
 	private boolean isAugmentedFifth(String chord) {
-		return chord.matches("(?s).*([0-9]+)(\\+|#|aug)5.*");
+		return chord.matches("(?s).*([0-9]+)(\\+|#|aug)5.*") || getSymbols(chord).matches("(?s).*(\\+|#)5.*");
 	}
 
 	private boolean isSharpNinth(String chord) {
@@ -357,4 +402,11 @@ public class ChordCalculator {
 	private boolean isSharpEleventh(String chord) {
 		return chord.matches("(?s).*([0-9]+)(\\+|#|aug)11.*");
 	}
+
+	// ref
+	// https://www.scales-chords.com/chord
+	// http://jguitar.com/
+	// http://scottdavies.net/chords_and_scales/music.html
+	// http://members.jamplay.com/teaching-tools/chord-library/family/c?
+	// https://chord-c.com/guitar-chord/
 }
