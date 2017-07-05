@@ -2,6 +2,6 @@
 public class UnknownNoteException extends Exception {
 
 	public UnknownNoteException(){
-		super();
+		super("Unknown note. Notes: C D E F G A B (b|#)");
 	}
 }
