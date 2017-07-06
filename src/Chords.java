@@ -21,7 +21,7 @@ public class Chords {
 	static final Integer MAJOR_SIXTH_SEMITONES = 9;
 	static final Integer DIMINISHED_SEVENTH_SEMITONES = MAJOR_SIXTH_SEMITONES;
 	static final Integer AUGMENTED_SIXTH_SEMITONES = 10;
-	static final Integer MINOR_SEVENTH_SEMITONES = 10;
+	static final Integer MINOR_SEVENTH_SEMITONES = AUGMENTED_SIXTH_SEMITONES;
 	static final Integer MAJOR_SEVENTH_SEMITONES = 11;
 	static final Integer AUGMENTED_SEVENTH_SEMITONES = 12;
 	static final Integer PERFECT_OCTAVE_SEMITONES = AUGMENTED_SEVENTH_SEMITONES;
