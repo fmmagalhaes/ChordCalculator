@@ -2,7 +2,7 @@
 public class Chords {
 	
 	static final String[] SYMBOLS = { "2", "4", "5", "6", "7", "8", "9", "11", "13", "-", "M", "min", "add", "maj", "Maj", "sus",
-			"dim", "aug", "dom", "+", "o", "°", "Ø", "ø", "m", "b", "#", "sus"};
+			"dim", "aug", "dom", "+", "o", "°", "Ø", "ø", "m", "b", "#", "sus", "/", "(", ")"};
 	static final String[] NOTES = { "C", "C#", "D", "Eb", "E", "F", "F#", "G", "G#", "A", "Bb", "B" };
 	static final String[] NOTES_ALT = { "C", "Db", "D", "D#", "E", "F", "Gb", "G", "Ab", "A", "A#", "B" };
 	static final String[] NOTES_SHARP_FLAT = { "C", "D", "E", "F", "G", "A", "B", "#", "b" };
