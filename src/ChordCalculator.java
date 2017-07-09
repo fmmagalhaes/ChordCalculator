@@ -101,6 +101,7 @@ public class ChordCalculator {
 			}
 
 		String root = getRootNote(chord);
+		chord = root + getSymbols(chord, true);
 		int n = (Integer) Utils.getKeyFromValue(intTonote, root);
 
 		ArrayList<Integer> compositionSemitones = new ArrayList<Integer>();
@@ -114,7 +115,11 @@ public class ChordCalculator {
 
 		if (!others) {
 			// 3
-			if (isMajor(chord) && !isMinorMajor(chord) && !isDiminishedMajor(chord))
+			if (isSuspendedSecond(chord))
+				compositionSemitones.add(Chords.MAJOR_SECOND_SEMITONES);
+			else if (isSuspendedFourth(chord))
+				compositionSemitones.add(Chords.PERFECT_FOURTH_SEMITONES);
+			else if (isMajor(chord) && !isMinorMajor(chord) && !isDiminishedMajor(chord))
 				compositionSemitones.add(Chords.MAJOR_THIRD_SEMITONES);
 			else if (isMinor(chord) || isDiminished(chord) || isHalfDiminished(chord))
 				compositionSemitones.add(Chords.MINOR_THIRD_SEMITONES);
@@ -177,15 +182,6 @@ public class ChordCalculator {
 			if (isThirteenth(chord))
 				compositionSemitones.add(Chords.MAJOR_THIRTEEN_SEMITONES);
 
-			boolean sus2 = isSuspendedSecond(chord);
-			boolean sus4 = isSuspendedFourth(chord);
-			if (sus2 || sus4) {
-				compositionSemitones.remove(1);
-				if (sus2)
-					compositionSemitones.add(1, Chords.MAJOR_SECOND_SEMITONES);
-				else
-					compositionSemitones.add(1, Chords.PERFECT_FOURTH_SEMITONES);
-			}
 		}
 
 		ArrayList<String> notes_aux = new ArrayList<String>();
@@ -209,16 +205,20 @@ public class ChordCalculator {
 		for (String chord : intTonote.values()) {
 
 			ArrayList<String> symbols = new ArrayList<String>();
-			String[] numbers = { "", "7", "9", "11", "13" };
+			String[] numbers = { "", "6", "7", "9", "11", "13" };
 			String[] symbolsArray = { "", "m", "M", "mM", "+M", "dim", "aug" };
 			for (String n : numbers)
 				for (String symbol : symbolsArray) {
 					if (n.isEmpty() && symbol.matches("M|(mM)|(\\+M)"))
 						continue;
+					if (n.equals("6") && symbol.matches("dim|M|mM|(\\+M)"))
+						continue; // Cm6 = CmM6
 					symbols.add(symbol + n);
 				}
 
-			String[] moreSymbolsArray = { "sus2", "sus4", "add9", "add11", "add13" };
+			String[] moreSymbolsArray = { "sus2", "sus4", "add9", "add11" };// ,
+																			// "add13"
+																			// };
 			ListIterator<String> it = symbols.listIterator();
 			String symbol = "";
 			while (it.hasNext()) {
@@ -232,12 +232,18 @@ public class ChordCalculator {
 						continue; // there's already add9#5 and add9b5
 					if (symbol.contains("13") && anotherSymbol.contains("add"))
 						continue;
-					if (symbol.contains("11") && anotherSymbol.matches("(?s).*add([0-57-9])*.*") || anotherSymbol.contains("sus4"))
-						continue; // perfect eleventh interval = suspended f(redundancy)
-					if (symbol.contains("9") && (anotherSymbol.matches("(?s).*add(6|(11))*.*") || anotherSymbol.contains("sus2")))
-						continue; // major ninth interval = suspended second (redundancy)
+					if (symbol.contains("11") && anotherSymbol.matches("(?s).*add([0-57-9])*.*")
+							|| anotherSymbol.contains("sus4"))
+						continue; // perfect eleventh interval = suspended
+									// f(redundancy)
+					if (symbol.contains("9")
+							&& (anotherSymbol.matches("(?s).*add(6|(11))*.*") || anotherSymbol.contains("sus2")))
+						continue; // major ninth interval = suspended second
+									// (redundancy)
 					if (symbol.contains("7") && anotherSymbol.contains("add9"))
 						continue;
+					if ((symbol.matches(".*\\d.*") || symbol.contains("6")) && anotherSymbol.contains("add13"))
+						continue; // Cm6 = Cmadd13
 					it.add(symbol + anotherSymbol);
 				}
 			}
@@ -254,7 +260,9 @@ public class ChordCalculator {
 						if (symbol.contains("11") && anotherSymbol.contains("11"))
 							continue;
 						if (newSymbol.contains("mb5"))
-							continue;
+							continue; // dim5
+						if (newSymbol.contains("m6add9b5"))
+							continue; // dim9
 						if (newSymbol.contains("5") && newSymbol.contains("M"))
 							continue; // there's already +M
 						if (newSymbol.contains("5") && (newSymbol.contains("sus") || newSymbol.contains("dim")
@@ -265,16 +273,17 @@ public class ChordCalculator {
 							continue;
 						if (isAddedEleventh(chord + newSymbol) && isSharpEleventh(chord + newSymbol))
 							continue;
-						if (newSymbol.contains("madd13b5"))
+						if (newSymbol.contains("m6b5") || newSymbol.contains("madd13b5"))
 							continue; // it's the same as dim7
-						if (newSymbol.contains("7#5") || newSymbol.contains("9#5") || newSymbol.contains("11#5")
-								|| newSymbol.contains("13#5"))
-							continue; // it's the same as aug7, aug9, aug11 and
+						if (newSymbol.contains("6#5") || newSymbol.contains("7#5") || newSymbol.contains("9#5")
+								|| newSymbol.contains("11#5") || newSymbol.contains("13#5"))
+							continue; // it's the same as aug6, aug7, aug9,
+										// aug11 and
 										// aug13
 						if (newSymbol.contains("11") && newSymbol.contains("9") && newSymbol.contains("7")
 								&& newSymbol.contains("add"))
-							continue; // no need to have "add" if we have 7 9 and 11
-						//TODO: what about add6?
+							continue; // no need to have "add" if we have 7 9
+										// and 11
 						if ((isMinor(chord + newSymbol) || isDiminished(chord + newSymbol))
 								&& isSharpNinth(chord + newSymbol))
 							continue; // #9 is the same as m3 (redundancy)
@@ -327,16 +336,31 @@ public class ChordCalculator {
 		throw new UnknownNoteException();
 	}
 
-	// returns the symbols of the given chord (ex: M7, 7, m7)
 	public String getSymbols(String chord) {
+		return getSymbols(chord, false);
+	}
+
+	// returns the symbols of the given chord (ex: M7, 7, m7)
+	public String getSymbols(String chord, boolean clean) {
 		String sharpFlat = "";
 		if (chord.length() > 1)
 			sharpFlat = chord.substring(1, 2);
 
 		if (sharpFlat.equals("b") || sharpFlat.equals("#"))
-			return chord.substring(2);
+			chord = chord.substring(2);
 		else
-			return chord.substring(1);
+			chord = chord.substring(1);
+
+		if (clean)
+			return cleanChord(chord);
+		else
+			return chord;
+	}
+
+	public String cleanChord(String chord) {
+		String regex = Utils.arrayToStringRegex(Chords.SYMBOLS, "|");
+		chord = chord.replaceAll(chord.replaceAll(regex, ""), "");
+		return chord;
 	}
 
 	// min maj aug dim
