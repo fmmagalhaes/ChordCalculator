@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -16,11 +17,6 @@ public class ChordCalculator {
 	// to keep keys like CM7, Cmaj7, C7maj, Cmajor7, etc, which all mean the
 	// same
 
-	/**
-	 * Constructs a ChordCalculator which allows a set of operations
-	 * 
-	 * @throws UnknownNoteException
-	 */
 	public ChordCalculator() {
 		long start = System.currentTimeMillis();
 		intTonote = new HashMap<Integer, String>();
@@ -32,9 +28,28 @@ public class ChordCalculator {
 	}
 
 	/**
+	 * Constructs a ChordCalculator which allows a set of operations
+	 * 
+	 * @param fill
+	 *            whether there's a need to fill composition map with thousands
+	 *            of chords. Only needed if getChordFromComposition will be used
+	 * @throws UnknownNoteException
+	 */
+	public ChordCalculator(boolean fill) {
+		long start = System.currentTimeMillis();
+		intTonote = new HashMap<Integer, String>();
+		composition = new HashMap<List<String>, String>();
+		for (int i = 0; i < Chords.NOTES.length; i++)
+			intTonote.put(i, Chords.NOTES[i]);
+		if (fill)
+			fillMaps();
+		System.out.println(System.currentTimeMillis() - start);
+	}
+
+	/**
 	 * @param chord
 	 * @param n
-	 * @return the result of adding n semitones to chord
+	 * @return the result of adding n semitones (half steps) to chord
 	 * @throws UnknownNoteException
 	 */
 	public String addSemitones(String chord, int n) throws UnknownNoteException {
@@ -49,7 +64,7 @@ public class ChordCalculator {
 	/**
 	 * @param chord
 	 * @param n
-	 * @return the result of subtracting n semitones to chord
+	 * @return the result of subtracting n semitones (half steps) to chord
 	 * @throws UnknownNoteException
 	 */
 	public String subtractSemitones(String chord, int n) throws UnknownNoteException {
@@ -119,11 +134,9 @@ public class ChordCalculator {
 				compositionSemitones.add(Chords.MAJOR_SECOND_SEMITONES);
 			else if (isSuspendedFourth(chord))
 				compositionSemitones.add(Chords.PERFECT_FOURTH_SEMITONES);
-			else if (isMajor(chord) && !isMinorMajor(chord) && !isDiminishedMajor(chord))
-				compositionSemitones.add(Chords.MAJOR_THIRD_SEMITONES);
 			else if (isMinor(chord) || isDiminished(chord) || isHalfDiminished(chord))
 				compositionSemitones.add(Chords.MINOR_THIRD_SEMITONES);
-			else // eg dominant, sharp five, flat five
+			else // eg major, dominant...
 				compositionSemitones.add(Chords.MAJOR_THIRD_SEMITONES);
 
 			// 5
@@ -144,43 +157,43 @@ public class ChordCalculator {
 
 			// 7
 			if (isSeventh(chord)
-					|| (isNinth(chord) && !isAddedNinth(chord) && !isSharpNinth(chord) && !isFlatNinth(chord))
-					|| (isEleventh(chord) && !isAddedEleventh(chord) && !isSharpEleventh(chord))
+					|| (isNinth(chord) && !isAddedNinth(chord) && !isFlatNinth(chord) && !isSharpNinth(chord))
+					|| (isEleventh(chord) && !isAddedEleventh(chord) && !isDiminishedEleventh(chord)
+							&& !isSharpEleventh(chord))
 					|| (isThirteenth(chord) && !isAddedThirteenth(chord)))
-				if (isMajor(chord) || isMinorMajor(chord))
+				if (isMajor(chord))
 					compositionSemitones.add(Chords.MAJOR_SEVENTH_SEMITONES);
-				else if (isMinor(chord) || isHalfDiminished(chord))
-					compositionSemitones.add(Chords.MINOR_SEVENTH_SEMITONES);
 				else if (isDiminished(chord))
 					compositionSemitones.add(Chords.DIMINISHED_SEVENTH_SEMITONES);
-				else // dominant, augmented and others
+				else // minor, half diminished, dominant, augmented and others
 					compositionSemitones.add(Chords.MINOR_SEVENTH_SEMITONES);
 
 			// 9
-			if ((isNinth(chord) || isAddedNinth(chord))
-					|| (isEleventh(chord) && !isAddedEleventh(chord) && !isSharpEleventh(chord))
+			if ((isNinth(chord) || isAddedNinth(chord)) || (isEleventh(chord) && !isAddedEleventh(chord)
+					&& !isDiminishedEleventh(chord) && !isSharpEleventh(chord))
 					|| (isThirteenth(chord) && !isAddedThirteenth(chord)))
 				if (isSharpNinth(chord))
 					compositionSemitones.add(Chords.SHARP_NINTH_SEMITONES);
-				else if (!isDiminished(chord) && !isFlatNinth(chord))
-					compositionSemitones.add(Chords.MAJOR_NINTH_SEMITONES);
-				else if (isFlatNinth(chord) || isMinor(chord) && (isDiminished(chord) || isHalfDiminished(chord)))
+				else if (isFlatNinth(chord))
 					compositionSemitones.add(Chords.MINOR_NINTH_SEMITONES);
 				else // eg minor major, minor dominant
 					compositionSemitones.add(Chords.MAJOR_NINTH_SEMITONES);
 
 			// 11
 			if (isEleventh(chord) || (isThirteenth(chord) && !isAddedThirteenth(chord)))
-				if (isDiminished(chord))
-					compositionSemitones.add(Chords.DIMINISHED_ELEVENTH_SEMITONES);
-				else if (isSharpEleventh(chord))
+				if (isSharpEleventh(chord))
 					compositionSemitones.add(Chords.SHARP_ELEVENTH_SEMITONES);
+				else if (isDiminished(chord) || isDiminishedEleventh(chord))
+					compositionSemitones.add(Chords.DIMINISHED_ELEVENTH_SEMITONES);
 				else
 					compositionSemitones.add(Chords.PERFECT_ELEVENTH_SEMITONES);
 
 			// 13
 			if (isThirteenth(chord))
-				compositionSemitones.add(Chords.MAJOR_THIRTEEN_SEMITONES);
+				if (isDiminishedThirteenth(chord))
+					compositionSemitones.add(Chords.MINOR_THIRTEEN_SEMITONES);
+				else
+					compositionSemitones.add(Chords.MAJOR_THIRTEEN_SEMITONES);
 
 		}
 
@@ -193,6 +206,7 @@ public class ChordCalculator {
 				notes_aux.add(note);
 		}
 
+		// Collections.sort(notes_aux);
 		if (composition.get(notes_aux) == null)
 			composition.put(notes_aux, chord);
 		else
@@ -248,13 +262,14 @@ public class ChordCalculator {
 				}
 			}
 
-			String[] evenMoreSymbolsArray = { "b5", "b7", "b9", "#5", "#7", "#9", "#11" };
+			String[] evenMoreSymbolsArray = { "b5", "b7", "b9", "#5", "#7", "#9", "#11", "b11" };
 			it = symbols.listIterator();
 			while (it.hasNext()) {
 				symbol = it.next();
 				if (!symbol.isEmpty()) {
 					for (String anotherSymbol : evenMoreSymbolsArray) {
 						String newSymbol = symbol + anotherSymbol;
+						String newChord = chord + newSymbol;
 						if (symbol.contains("9") && anotherSymbol.contains("9"))
 							continue;
 						if (symbol.contains("11") && anotherSymbol.contains("11"))
@@ -268,10 +283,9 @@ public class ChordCalculator {
 						if (newSymbol.contains("5") && (newSymbol.contains("sus") || newSymbol.contains("dim")
 								|| newSymbol.contains("aug") || newSymbol.contains("+")))
 							continue;
-						if (isAddedNinth(chord + newSymbol)
-								&& (isFlatNinth(chord + newSymbol) || isSharpNinth(chord + newSymbol)))
+						if (isAddedNinth(newChord) && (isFlatNinth(newChord) || isSharpNinth(newChord)))
 							continue;
-						if (isAddedEleventh(chord + newSymbol) && isSharpEleventh(chord + newSymbol))
+						if (isAddedEleventh(newChord) && isSharpEleventh(newChord))
 							continue;
 						if (newSymbol.contains("m6b5") || newSymbol.contains("madd13b5"))
 							continue; // it's the same as dim7
@@ -284,9 +298,13 @@ public class ChordCalculator {
 								&& newSymbol.contains("add"))
 							continue; // no need to have "add" if we have 7 9
 										// and 11
-						if ((isMinor(chord + newSymbol) || isDiminished(chord + newSymbol))
-								&& isSharpNinth(chord + newSymbol))
+						if ((isMinor(newChord) || isDiminished(newChord)) && isSharpNinth(newChord))
 							continue; // #9 is the same as m3 (redundancy)
+						if (!(isMinor(newChord) || isDiminished(newChord)) && isDiminishedEleventh(newChord))
+							continue; // b11 is the same as 3 (major third)
+										// (redundancy)
+						if (isDiminished(newChord) && isSharpEleventh(newChord))
+							continue; // #11 is the same as m7 (redundancy)
 						it.add(newSymbol);
 					}
 				}
@@ -373,10 +391,6 @@ public class ChordCalculator {
 		return chord.contains("M") || chord.contains("maj");
 	}
 
-	private boolean isMinorMajor(String chord) {
-		return isMinor(chord) && isMajor(chord);
-	}
-
 	private boolean isAugmented(String chord) {
 		return getSymbols(chord).matches("(\\+|aug).*");
 	}
@@ -390,10 +404,6 @@ public class ChordCalculator {
 	private boolean isHalfDiminished(String chord) {
 		return chord.contains("Ø") || chord.contains("ø") || chord.contains("half")
 				|| (chord.contains("om7") && !chord.contains("dom7"));
-	}
-
-	private boolean isDiminishedMajor(String chord) {
-		return chord.replace("dom", "").matches("(?s).*(dim|°|o)(M|maj).*");
 	}
 
 	// suspended chords
@@ -449,6 +459,10 @@ public class ChordCalculator {
 	}
 
 	// flats/diminished
+	private boolean isJustDiminishedFifth(String chord) {
+		return chord.matches("(?s).*([0-9]+)(dim|m|-|b)5.*") || getSymbols(chord).matches("(?s).*((-|b)5).*");
+	}
+
 	private boolean isFlatSixth(String chord) {
 		return chord.matches("(?s).*(-|b)6.*");
 	}
@@ -458,8 +472,12 @@ public class ChordCalculator {
 				|| getSymbols(chord).contains("b9");
 	}
 
-	private boolean isJustDiminishedFifth(String chord) {
-		return chord.matches("(?s).*([0-9]+)(dim|m|-|b)5.*") || getSymbols(chord).matches("(?s).*((-|b)5).*");
+	private boolean isDiminishedEleventh(String chord) {
+		return getSymbols(chord).matches("\\S+(-|b|dim)11.*") || getSymbols(chord).contains("b11");
+	}
+
+	private boolean isDiminishedThirteenth(String chord) {
+		return getSymbols(chord).matches("\\S+(-|b|dim)13.*") || getSymbols(chord).contains("b13");
 	}
 
 	// sharp/augmented
