@@ -6,11 +6,16 @@ public class Utils {
 	public static String arrayToStringRegex(String[] array, String separator) {
 		String str = "";
 		int i = 0;
+
 		for (; i < array.length - 1; i++) {
-			if (array[i].equals("+"))
+			if (array[i].equals("+") || array[i].equals("(") || array[i].equals(")"))
 				str += "\\";
 			str += array[i] + separator;
 		}
+
+		if (array[i].equals("+") || array[i].equals("(") || array[i].equals(")"))
+			str += "\\";
+
 		str += array[i];
 		return str;
 	}

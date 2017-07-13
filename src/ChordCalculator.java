@@ -17,33 +17,16 @@ public class ChordCalculator {
 	// to keep keys like CM7, Cmaj7, C7maj, Cmajor7, etc, which all mean the
 	// same
 
-	public ChordCalculator() {
-		long start = System.currentTimeMillis();
-		intTonote = new HashMap<Integer, String>();
-		composition = new HashMap<List<String>, String>();
-		for (int i = 0; i < Chords.NOTES.length; i++)
-			intTonote.put(i, Chords.NOTES[i]);
-		fillMaps();
-		System.out.println(System.currentTimeMillis() - start);
-	}
-
 	/**
 	 * Constructs a ChordCalculator which allows a set of operations
 	 * 
-	 * @param fill
-	 *            whether there's a need to fill composition map with thousands
-	 *            of chords. Only needed if getChordFromComposition will be used
 	 * @throws UnknownNoteException
 	 */
-	public ChordCalculator(boolean fill) {
-		long start = System.currentTimeMillis();
+	public ChordCalculator() {
 		intTonote = new HashMap<Integer, String>();
 		composition = new HashMap<List<String>, String>();
 		for (int i = 0; i < Chords.NOTES.length; i++)
 			intTonote.put(i, Chords.NOTES[i]);
-		if (fill)
-			fillMaps();
-		System.out.println(System.currentTimeMillis() - start);
 	}
 
 	/**
@@ -82,23 +65,35 @@ public class ChordCalculator {
 	 *         parameter
 	 * @throws UnknownNoteException
 	 */
-	public String getChordFromComposition(List<String> notes) throws UnknownNoteException {
+	public List<String> getChord(List<String> notes) throws UnknownNoteException {
 		List<String> notes_aux = new ArrayList<String>();
 
-		// need to transform A# to Bb, Db to C#, etc.
+		// need to transform A# to Bb, Db to C#, etc. and remove symbols
 		for (String note : notes)
-			notes_aux.add(getRootNote(note) + getSymbols(note));
+			notes_aux.add(getRootNote(note));
 
-		String chord = "";
-		chord = composition.get(notes_aux);
-		if (chord != null)
-			return chord;
+		notes = notes_aux;
 
-		for (Entry<List<String>, String> entry : composition.entrySet()) {
-			if (Utils.equalLists(entry.getKey(), notes_aux))
-				return entry.getValue();
+		ArrayList<String> correctChords = new ArrayList<String>();
+		//ArrayList<String> notSoCorrectChords = new ArrayList<String>();
+		int length = notes.size();
+		int correctChordsCount = 0;
+		for (int i = 0; i < length; i++) {
+			String chord = tryRoot(notes);
+			if (Utils.equalLists(getNotes(chord), notes))
+				if (isReasonable(notes, chord))
+					correctChords.add(correctChordsCount++, chord);
+				else
+					correctChords.add(correctChords.size(), chord);
+			/*else if (isReasonable(notes, chord))
+				notSoCorrectChords.add(chord);*/
+			
+			// moving first note to last position
+			String firstNote = notes.remove(0);
+			notes.add(firstNote);
 		}
-		return null;
+
+		return correctChords;/*!correctChords.isEmpty() ? correctChords : notSoCorrectChords.subList(0, 1);*/
 	}
 
 	/**
@@ -106,7 +101,7 @@ public class ChordCalculator {
 	 * @return the list of notes which form the chord
 	 * @throws UnknownNoteException
 	 */
-	public List<String> getComposition(String chord) throws UnknownNoteException {
+	public List<String> getNotes(String chord) throws UnknownNoteException {
 		String[] roots = chord.split("/");
 		String bassNote = "";
 		if (roots.length > 1)
@@ -116,7 +111,7 @@ public class ChordCalculator {
 			}
 
 		String root = getRootNote(chord);
-		chord = root + getSymbols(chord, true);
+		chord = root + getSymbols(chord);
 		int n = (Integer) Utils.getKeyFromValue(intTonote, root);
 
 		ArrayList<Integer> compositionSemitones = new ArrayList<Integer>();
@@ -173,16 +168,17 @@ public class ChordCalculator {
 					&& !isDiminishedEleventh(chord) && !isSharpEleventh(chord))
 					|| (isThirteenth(chord) && !isAddedThirteenth(chord)))
 				if (isSharpNinth(chord))
-					compositionSemitones.add(Chords.SHARP_NINTH_SEMITONES);
+					compositionSemitones.add(Chords.AUGMENTED_NINTH_SEMITONES);
 				else if (isFlatNinth(chord))
 					compositionSemitones.add(Chords.MINOR_NINTH_SEMITONES);
 				else // eg minor major, minor dominant
 					compositionSemitones.add(Chords.MAJOR_NINTH_SEMITONES);
 
 			// 11
-			if (isEleventh(chord) || (isThirteenth(chord) && !isAddedThirteenth(chord)))
+			if (isEleventh(chord)
+					|| (isThirteenth(chord) && !isAddedThirteenth(chord) && !isDiminishedThirteenth(chord)))
 				if (isSharpEleventh(chord))
-					compositionSemitones.add(Chords.SHARP_ELEVENTH_SEMITONES);
+					compositionSemitones.add(Chords.AUGMENTED_ELEVENTH_SEMITONES);
 				else if (isDiminished(chord) || isDiminishedEleventh(chord))
 					compositionSemitones.add(Chords.DIMINISHED_ELEVENTH_SEMITONES);
 				else
@@ -209,127 +205,153 @@ public class ChordCalculator {
 		// Collections.sort(notes_aux);
 		if (composition.get(notes_aux) == null)
 			composition.put(notes_aux, chord);
-		else
-			System.out.println("repeated");
 
 		return notes_aux;
 	}
 
-	private void fillMaps() {
-		for (String chord : intTonote.values()) {
+	private boolean containsInterval(List<String> notes, int interval) {
+		int m = (Integer) Utils.getKeyFromValue(intTonote, notes.get(0));
+		String newNote = intTonote.get((m + interval) % 12);
+		return notes.contains(newNote);
+	}
 
-			ArrayList<String> symbols = new ArrayList<String>();
-			String[] numbers = { "", "6", "7", "9", "11", "13" };
-			String[] symbolsArray = { "", "m", "M", "mM", "+M", "dim", "aug" };
-			for (String n : numbers)
-				for (String symbol : symbolsArray) {
-					if (n.isEmpty() && symbol.matches("M|(mM)|(\\+M)"))
-						continue;
-					if (n.equals("6") && symbol.matches("dim|M|mM|(\\+M)"))
-						continue; // Cm6 = CmM6
-					symbols.add(symbol + n);
+	private boolean isReasonable(List<String> notes, String chord) {
+		// Check if symbol is not reasonable
+		if (!getSymbols(chord).matches("(?s).*(b5|#5|dim).*")
+				&& !containsInterval(notes, Chords.PERFECT_FIFTH_SEMITONES))
+			return false; // Catches most things
+		if ((containsInterval(notes, Chords.PERFECT_FIFTH_SEMITONES)
+				|| containsInterval(notes, Chords.DIMINISHED_FIFTH_SEMITONES))
+				&& containsInterval(notes, Chords.MINOR_THIRD_SEMITONES)
+				&& containsInterval(notes, Chords.MINOR_SIXTH_SEMITONES))
+			return false; // Catches E, G, B(b), C
+		if (chord.contains("6add11"))
+			return false; // Catches G, B(b), C, D, E
+		return true;
+	}
+
+	// based on https://github.com/jsrmath/sharp11
+	public String tryRoot(List<String> notes) throws UnknownNoteException {
+		String root = getRootNote(notes.get(0));
+		String symbols = "";
+		boolean noThird = false;
+
+		// 3
+		if (containsInterval(notes, Chords.MAJOR_THIRD_SEMITONES)) {
+			if (containsInterval(notes, Chords.AUGMENTED_FIFTH_SEMITONES)
+					&& !(containsInterval(notes, Chords.MAJOR_SEVENTH_SEMITONES)
+							|| containsInterval(notes, Chords.MINOR_SEVENTH_SEMITONES))) {
+				symbols += "+";
+			}
+		} else if (containsInterval(notes, Chords.MINOR_THIRD_SEMITONES)) {
+			if (containsInterval(notes, Chords.DIMINISHED_FIFTH_SEMITONES)
+					&& !containsInterval(notes, Chords.PERFECT_FIFTH_SEMITONES)
+					&& !containsInterval(notes, Chords.MAJOR_SEVENTH_SEMITONES)) {
+				if (containsInterval(notes, Chords.DIMINISHED_SEVENTH_SEMITONES)
+						&& !containsInterval(notes, Chords.MINOR_SEVENTH_SEMITONES)) {
+					symbols += "dim7";
+				} else if (containsInterval(notes, Chords.MINOR_SEVENTH_SEMITONES)) {
+					symbols += "m";
+				} else {
+					symbols += "dim";
 				}
+			} else {
+				symbols += "m";
+			}
+		} else {
+			if (containsInterval(notes, Chords.PERFECT_FOURTH_SEMITONES))
+				symbols += "sus4";
+			else if (containsInterval(notes, Chords.MAJOR_SECOND_SEMITONES))
+				symbols += "sus2";
+			else
+				noThird = true;
+		}
 
-			String[] moreSymbolsArray = { "sus2", "sus4", "add9", "add11" };// ,
-																			// "add13"
-																			// };
-			ListIterator<String> it = symbols.listIterator();
-			String symbol = "";
-			while (it.hasNext()) {
-				symbol = it.next();
-				for (String anotherSymbol : moreSymbolsArray) {
-					if (anotherSymbol.contains("sus")
-							&& (isMinor(chord + symbol) || symbol.contains("dim") || symbol.contains("aug")))
-						continue;
-					if ((symbol.contains("dim") || symbol.contains("aug"))
-							&& anotherSymbol.matches("(?s).*add([0-57-9])*.*"))
-						continue; // there's already add9#5 and add9b5
-					if (symbol.contains("13") && anotherSymbol.contains("add"))
-						continue;
-					if (symbol.contains("11") && anotherSymbol.matches("(?s).*add([0-57-9])*.*")
-							|| anotherSymbol.contains("sus4"))
-						continue; // perfect eleventh interval = suspended
-									// f(redundancy)
-					if (symbol.contains("9")
-							&& (anotherSymbol.matches("(?s).*add(6|(11))*.*") || anotherSymbol.contains("sus2")))
-						continue; // major ninth interval = suspended second
-									// (redundancy)
-					if (symbol.contains("7") && anotherSymbol.contains("add9"))
-						continue;
-					if ((symbol.matches(".*\\d.*") || symbol.contains("6")) && anotherSymbol.contains("add13"))
-						continue; // Cm6 = Cmadd13
-					it.add(symbol + anotherSymbol);
+		// 7
+		if (containsInterval(notes, Chords.MAJOR_SEVENTH_SEMITONES)
+				|| containsInterval(notes, Chords.MINOR_SEVENTH_SEMITONES)) {
+			if (containsInterval(notes, Chords.MAJOR_SEVENTH_SEMITONES)) {
+				symbols += "M";
+			}
+			if (containsInterval(notes, Chords.MAJOR_SIXTH_SEMITONES)) {
+				symbols += "13";
+			} else if (containsInterval(notes, Chords.PERFECT_FOURTH_SEMITONES)
+					&& (containsInterval(notes, Chords.MAJOR_THIRD_SEMITONES)
+							|| containsInterval(notes, Chords.MINOR_THIRD_SEMITONES))) {
+				symbols += "11";
+			} else if (containsInterval(notes, Chords.MAJOR_SECOND_SEMITONES)
+					&& (containsInterval(notes, Chords.MAJOR_THIRD_SEMITONES)
+							|| containsInterval(notes, Chords.MINOR_THIRD_SEMITONES))) {
+				symbols += "9";
+			} else {
+				symbols += "7";
+			}
+		} else if (containsInterval(notes, Chords.MAJOR_THIRD_SEMITONES)
+				|| containsInterval(notes, Chords.MINOR_THIRD_SEMITONES)) {
+			if (containsInterval(notes, Chords.MAJOR_SIXTH_SEMITONES)
+					&& !containsInterval(notes, Chords.DIMINISHED_FIFTH_SEMITONES)) {
+				symbols += "6";
+				if (containsInterval(notes, Chords.MAJOR_SECOND_SEMITONES)) {
+					symbols += "/9";
 				}
 			}
-
-			String[] evenMoreSymbolsArray = { "b5", "b7", "b9", "#5", "#7", "#9", "#11", "b11" };
-			it = symbols.listIterator();
-			while (it.hasNext()) {
-				symbol = it.next();
-				if (!symbol.isEmpty()) {
-					for (String anotherSymbol : evenMoreSymbolsArray) {
-						String newSymbol = symbol + anotherSymbol;
-						String newChord = chord + newSymbol;
-						if (symbol.contains("9") && anotherSymbol.contains("9"))
-							continue;
-						if (symbol.contains("11") && anotherSymbol.contains("11"))
-							continue;
-						if (newSymbol.contains("mb5"))
-							continue; // dim5
-						if (newSymbol.contains("m6add9b5"))
-							continue; // dim9
-						if (newSymbol.contains("5") && newSymbol.contains("M"))
-							continue; // there's already +M
-						if (newSymbol.contains("5") && (newSymbol.contains("sus") || newSymbol.contains("dim")
-								|| newSymbol.contains("aug") || newSymbol.contains("+")))
-							continue;
-						if (isAddedNinth(newChord) && (isFlatNinth(newChord) || isSharpNinth(newChord)))
-							continue;
-						if (isAddedEleventh(newChord) && isSharpEleventh(newChord))
-							continue;
-						if (newSymbol.contains("m6b5") || newSymbol.contains("madd13b5"))
-							continue; // it's the same as dim7
-						if (newSymbol.contains("6#5") || newSymbol.contains("7#5") || newSymbol.contains("9#5")
-								|| newSymbol.contains("11#5") || newSymbol.contains("13#5"))
-							continue; // it's the same as aug6, aug7, aug9,
-										// aug11 and
-										// aug13
-						if (newSymbol.contains("11") && newSymbol.contains("9") && newSymbol.contains("7")
-								&& newSymbol.contains("add"))
-							continue; // no need to have "add" if we have 7 9
-										// and 11
-						if ((isMinor(newChord) || isDiminished(newChord)) && isSharpNinth(newChord))
-							continue; // #9 is the same as m3 (redundancy)
-						if (!(isMinor(newChord) || isDiminished(newChord)) && isDiminishedEleventh(newChord))
-							continue; // b11 is the same as 3 (major third)
-										// (redundancy)
-						if (isDiminished(newChord) && isSharpEleventh(newChord))
-							continue; // #11 is the same as m7 (redundancy)
-						it.add(newSymbol);
-					}
-				}
+			if (containsInterval(notes, Chords.PERFECT_FOURTH_SEMITONES)) {
+				symbols += "add11";
 			}
-
-			symbols.add("5");
-
-			try {
-				for (String symb : symbols) {
-					if ((symb).matches("(?s).*[0-9][0-9][0-9]+.*"))
-						continue;
-					if ((symb).matches("(?s).*[2-9][0-9]+.*"))
-						continue;
-					if ((getSymbols(chord + symb)).matches("(?s).*(#|b)7.*"))
-						continue;
-					System.out.println(chord + symb);
-					// getComposition(chord + symb);
-					System.out.println(getComposition(chord + symb) + "\n");
-				}
-
-			} catch (Exception e) {
-				e.printStackTrace();
-				System.exit(0);
+			if (!containsInterval(notes, Chords.MAJOR_SIXTH_SEMITONES)
+					&& containsInterval(notes, Chords.MAJOR_SECOND_SEMITONES)) {
+				symbols += "add9";
 			}
 		}
+
+		if ((containsInterval(notes, Chords.MAJOR_THIRD_SEMITONES)
+				|| containsInterval(notes, Chords.MINOR_THIRD_SEMITONES))
+				&& containsInterval(notes, Chords.DIMINISHED_FIFTH_SEMITONES)
+				&& !containsInterval(notes, Chords.PERFECT_FIFTH_SEMITONES)
+				&& (containsInterval(notes, Chords.MAJOR_SEVENTH_SEMITONES)
+						|| containsInterval(notes, Chords.MINOR_SEVENTH_SEMITONES))) {
+			symbols += "b5";
+		}
+		if (containsInterval(notes, Chords.MAJOR_THIRD_SEMITONES)
+				&& containsInterval(notes, Chords.AUGMENTED_FIFTH_SEMITONES)
+				&& !containsInterval(notes, Chords.PERFECT_FIFTH_SEMITONES)
+				&& (containsInterval(notes, Chords.MAJOR_SEVENTH_SEMITONES)
+						|| containsInterval(notes, Chords.MINOR_SEVENTH_SEMITONES))) {
+			symbols += "#5";
+		}
+		if (containsInterval(notes, Chords.MINOR_SECOND_SEMITONES)) {
+			symbols += "b9";
+		}
+		if (containsInterval(notes, Chords.MAJOR_THIRD_SEMITONES)
+				&& containsInterval(notes, Chords.AUGMENTED_SECOND_SEMITONES)) {
+			symbols += "#9";
+		}
+		if ((containsInterval(notes, Chords.MAJOR_THIRD_SEMITONES)
+				|| containsInterval(notes, Chords.MINOR_THIRD_SEMITONES))
+				&& containsInterval(notes, Chords.DIMINISHED_FIFTH_SEMITONES)
+				&& containsInterval(notes, Chords.PERFECT_FIFTH_SEMITONES)
+				&& (containsInterval(notes, Chords.MAJOR_SEVENTH_SEMITONES)
+						|| containsInterval(notes, Chords.MINOR_SEVENTH_SEMITONES))) {
+			symbols += "#11";
+		}
+		if ((containsInterval(notes, Chords.MAJOR_THIRD_SEMITONES)
+				|| containsInterval(notes, Chords.MINOR_THIRD_SEMITONES))
+				&& containsInterval(notes, Chords.MINOR_SIXTH_SEMITONES)
+				&& containsInterval(notes, Chords.PERFECT_FIFTH_SEMITONES)
+				&& (containsInterval(notes, Chords.MAJOR_SEVENTH_SEMITONES)
+						|| containsInterval(notes, Chords.MINOR_SEVENTH_SEMITONES))) {
+			symbols += "b13";
+		}
+
+		if (noThird) {
+			if (symbols.isEmpty()) {
+				symbols = "5";
+			} else {
+				symbols += "no3";
+			}
+		}
+
+		return root + symbols;
 	}
 
 	// returns the root of the given chord
@@ -354,12 +376,8 @@ public class ChordCalculator {
 		throw new UnknownNoteException();
 	}
 
-	public String getSymbols(String chord) {
-		return getSymbols(chord, false);
-	}
-
 	// returns the symbols of the given chord (ex: M7, 7, m7)
-	public String getSymbols(String chord, boolean clean) {
+	public String getSymbols(String chord) {
 		String sharpFlat = "";
 		if (chord.length() > 1)
 			sharpFlat = chord.substring(1, 2);
@@ -369,15 +387,14 @@ public class ChordCalculator {
 		else
 			chord = chord.substring(1);
 
-		if (clean)
-			return cleanChord(chord);
-		else
-			return chord;
+		return cleanChord(chord);
 	}
 
 	public String cleanChord(String chord) {
 		String regex = Utils.arrayToStringRegex(Chords.SYMBOLS, "|");
-		chord = chord.replaceAll(chord.replaceAll(regex, ""), "");
+		String charsToRemove = chord.replaceAll(regex, "");
+		for (int i = 0; i < charsToRemove.length(); i++)
+			chord = chord.replace(charsToRemove.substring(i, i + 1), "");
 		return chord;
 	}
 
@@ -464,7 +481,7 @@ public class ChordCalculator {
 	}
 
 	private boolean isFlatSixth(String chord) {
-		return chord.matches("(?s).*(-|b)6.*");
+		return getSymbols(chord).matches("(?s).*(-|b)6.*");
 	}
 
 	private boolean isFlatNinth(String chord) {
@@ -503,4 +520,5 @@ public class ChordCalculator {
 	// http://scottdavies.net/chords_and_scales/music.html
 	// http://members.jamplay.com/teaching-tools/chord-library/family/c?
 	// https://chord-c.com/guitar-chord/
+	// http://julianrosenblum.com/sharp11-client/
 }

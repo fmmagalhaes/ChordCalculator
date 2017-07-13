@@ -37,19 +37,28 @@ public class Main {
 					int n = Integer.parseInt(parts[1]);
 					String newchord = calc.subtractSemitones(chord, n);
 					System.out.println(newchord + "\n");
-				} else if (line.matches("([CDEFGAB](#|b)?) ([CDEFGAB](#|b)? ?)+")) {
+				} else if (line.matches("[CDEFGAB](#|b)?(,)? ([CDEFGAB](#|b)?(,)? ?)+")) {
 					// CHORD FROM NOTES
+					line = line.replace(",", "");
 					List<String> notes = Arrays.asList(line.split(" "));
-					System.out.println(calc.getChordFromComposition(notes) + "\n");
+
+					// get all possible chord names
+					List<String> chords = calc.getChord(notes);
+					if (!chords.isEmpty())
+						System.out.println(chords);
+					else
+						System.out.println("no chord");
+
+					System.out.println();
 				} else { // if (line.matches((chordMatch))) {
 					/// COMPOSITION
 					String chord = line;
 					List<String> list = null;
-					list = calc.getComposition(chord);
+					list = calc.getNotes(chord);
 
 					// for debugging
 					System.out.println("Root = " + calc.getRootNote(chord));
-					System.out.println("Symbols = " + calc.getSymbols(chord, true));
+					System.out.println("Symbols = " + calc.getSymbols(chord));
 
 					String composition = "";
 					for (String note : list)
@@ -58,6 +67,8 @@ public class Main {
 				}
 			} catch (UnknownNoteException e) {
 				System.out.println(e.getMessage() + "\n");
+			} catch (Exception e) {
+				System.out.println("Error on input");
 			}
 		}
 	}
