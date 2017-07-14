@@ -5,8 +5,7 @@ public class Chords {
 			"Maj", "sus", "dim", "aug", "dom", "+", "o", "°", "Ø", "ø", "m", "b", "#", "sus", "/", "(", ")" };
 	static final String[] NOTES = { "C", "C#", "D", "Eb", "E", "F", "F#", "G", "G#", "A", "Bb", "B" };
 	static final String[] NOTES_ALT = { "C", "Db", "D", "D#", "E", "F", "Gb", "G", "Ab", "A", "A#", "B" };
-	static final String[] NOTES_SHARP_FLAT = { "C", "D", "E", "F", "G", "A", "B", "#", "b" };
-
+	
 	// intervals
 	static final Integer ROOT_SEMITONES = 0;
 	static final Integer MINOR_SECOND_SEMITONES = 1;

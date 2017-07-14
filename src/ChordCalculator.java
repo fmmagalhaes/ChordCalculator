@@ -87,6 +87,8 @@ public class ChordCalculator {
 			// moving first note to last position
 			String firstNote = notes.remove(0);
 			notes.add(firstNote);
+			// next time we'll try a different root
+			// resulting in a different inversion
 		}
 
 		// return !correctChords.isEmpty() ? correctChords :
@@ -191,26 +193,27 @@ public class ChordCalculator {
 
 		}
 
-		ArrayList<String> notes_aux = new ArrayList<String>();
+		ArrayList<String> notes = new ArrayList<String>();
 		if (!bassNote.isEmpty())
-			notes_aux.add(bassNote);
+			notes.add(bassNote);
 		for (int semitones : compositionSemitones) {
 			String note = intTonote.get((n + semitones) % 12);
-			if (!notes_aux.contains(note))
-				notes_aux.add(note);
+			if (!notes.contains(note))
+				notes.add(note);
 		}
 
-		return notes_aux;
+		return notes;
 	}
 
+	// checks if a list of notes contains the note equivalent to root+interval
 	private boolean containsInterval(List<String> notes, int interval) {
 		int m = (Integer) Utils.getKeyFromValue(intTonote, notes.get(0));
 		String newNote = intTonote.get((m + interval) % 12);
 		return notes.contains(newNote);
 	}
 
+	// an inversion is reasonable it is likely to be the correct inversion
 	private boolean isReasonable(List<String> notes, String chord) {
-		// Check if symbol is not reasonable
 		if (!getSymbols(chord).matches("(?s).*(b5|#5|dim).*")
 				&& !containsInterval(notes, Chords.PERFECT_FIFTH_SEMITONES))
 			return false; // Catches most things
@@ -225,6 +228,7 @@ public class ChordCalculator {
 	}
 
 	// based on https://github.com/jsrmath/sharp11
+	// trying different roots means trying different inversions
 	public String tryRoot(List<String> notes, String bass) throws UnknownNoteException {
 		String root = getRootNote(notes.get(0));
 		String symbols = "";
