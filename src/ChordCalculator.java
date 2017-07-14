@@ -10,12 +10,6 @@ import java.util.Map.Entry;
 public class ChordCalculator {
 
 	private Map<Integer, String> intTonote; // maps 0 to C, 1 to C#, 2 to D, etc
-	private Map<List<String>, String> composition; // maps a list of notes to
-													// the chord they form
-	// <list, string> and not <string, list> because otherwise it would be
-	// necessary
-	// to keep keys like CM7, Cmaj7, C7maj, Cmajor7, etc, which all mean the
-	// same
 
 	/**
 	 * Constructs a ChordCalculator which allows a set of operations
@@ -24,7 +18,6 @@ public class ChordCalculator {
 	 */
 	public ChordCalculator() {
 		intTonote = new HashMap<Integer, String>();
-		composition = new HashMap<List<String>, String>();
 		for (int i = 0; i < Chords.NOTES.length; i++)
 			intTonote.put(i, Chords.NOTES[i]);
 	}
@@ -66,13 +59,13 @@ public class ChordCalculator {
 	 * @throws UnknownNoteException
 	 */
 	public List<String> getChord(List<String> notes) throws UnknownNoteException {
-		List<String> notes_aux = new ArrayList<String>();
+		List<String> notesAux = new ArrayList<String>();
 
 		// need to transform A# to Bb, Db to C#, etc. and remove symbols
 		for (String note : notes)
-			notes_aux.add(getRootNote(note));
+			notesAux.add(getRootNote(note));
 
-		notes = notes_aux;
+		notes = notesAux;
 
 		ArrayList<String> correctChords = new ArrayList<String>();
 		// ArrayList<String> notSoCorrectChords = new ArrayList<String>();
@@ -96,10 +89,9 @@ public class ChordCalculator {
 			notes.add(firstNote);
 		}
 
-		return correctChords;/*
-								 * !correctChords.isEmpty() ? correctChords :
-								 * notSoCorrectChords.subList(0, 1);
-								 */
+		// return !correctChords.isEmpty() ? correctChords :
+		// notSoCorrectChords.subList(0, 1);
+		return correctChords;
 	}
 
 	/**
@@ -108,11 +100,11 @@ public class ChordCalculator {
 	 * @throws UnknownNoteException
 	 */
 	public List<String> getNotes(String chord) throws UnknownNoteException {
-		String[] roots = chord.split("/");
+		String[] chordWithBass = chord.split("/");
 		String bassNote = "";
-		if (roots.length > 1)
+		if (chordWithBass.length > 1)
 			try {
-				bassNote = getRootNote(roots[1]);
+				bassNote = getRootNote(chordWithBass[chordWithBass.length - 1]);
 			} catch (UnknownNoteException e) {
 			}
 
@@ -207,10 +199,6 @@ public class ChordCalculator {
 			if (!notes_aux.contains(note))
 				notes_aux.add(note);
 		}
-
-		// Collections.sort(notes_aux);
-		if (composition.get(notes_aux) == null)
-			composition.put(notes_aux, chord);
 
 		return notes_aux;
 	}
@@ -463,7 +451,6 @@ public class ChordCalculator {
 	}
 
 	// numbers
-	// TODO: check G5m
 	private boolean isPowerChord(String chord) {
 		return getSymbols(chord).matches("5|8");
 	}
