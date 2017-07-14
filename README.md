@@ -23,6 +23,7 @@ calc.addSemitones("C#", 3); // returns E
 calc.subtractSemitones("E7", 3); // returns C#7  
 
 calc.getNotes("Bm7"); // returns the list [B, D, F#, A]
+calc.getNotes("D6"); // returns the list [D, F#, A, B]  
 
 String[] notes = {"B", "D", "F#", "A"};  
 calc.getChord(Arrays.asList(notes)); // returns the list [Bm7, D6] (if possible, first chord's root is first note in the argument. In this case, "Bm7" comes first, because B was the first note)
