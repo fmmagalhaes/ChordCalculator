@@ -75,25 +75,31 @@ public class ChordCalculator {
 		notes = notes_aux;
 
 		ArrayList<String> correctChords = new ArrayList<String>();
-		//ArrayList<String> notSoCorrectChords = new ArrayList<String>();
+		// ArrayList<String> notSoCorrectChords = new ArrayList<String>();
 		int length = notes.size();
 		int correctChordsCount = 0;
+		String bass = getRootNote(notes.get(0));
 		for (int i = 0; i < length; i++) {
-			String chord = tryRoot(notes);
+			String chord = tryRoot(notes, bass);
 			if (Utils.equalLists(getNotes(chord), notes))
 				if (isReasonable(notes, chord))
 					correctChords.add(correctChordsCount++, chord);
 				else
 					correctChords.add(correctChords.size(), chord);
-			/*else if (isReasonable(notes, chord))
-				notSoCorrectChords.add(chord);*/
-			
+			/*
+			 * else if (isReasonable(notes, chord))
+			 * notSoCorrectChords.add(chord);
+			 */
+
 			// moving first note to last position
 			String firstNote = notes.remove(0);
 			notes.add(firstNote);
 		}
 
-		return correctChords;/*!correctChords.isEmpty() ? correctChords : notSoCorrectChords.subList(0, 1);*/
+		return correctChords;/*
+								 * !correctChords.isEmpty() ? correctChords :
+								 * notSoCorrectChords.subList(0, 1);
+								 */
 	}
 
 	/**
@@ -231,7 +237,7 @@ public class ChordCalculator {
 	}
 
 	// based on https://github.com/jsrmath/sharp11
-	public String tryRoot(List<String> notes) throws UnknownNoteException {
+	public String tryRoot(List<String> notes, String bass) throws UnknownNoteException {
 		String root = getRootNote(notes.get(0));
 		String symbols = "";
 		boolean noThird = false;
@@ -350,6 +356,9 @@ public class ChordCalculator {
 				symbols += "no3";
 			}
 		}
+
+		if (!root.equals(bass))
+			symbols += "/" + bass;
 
 		return root + symbols;
 	}
