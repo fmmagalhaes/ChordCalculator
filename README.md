@@ -1,23 +1,24 @@
 # ChordCalculator
-Allows you to make arithmetic operation with song notes or chords. Based on stringed instruments.
+Java music calculator for operations with notes and chords.  
+ChordCalculator can transpose notes and chords (by summing and subtracting half steps). It can also list the group of notes in a chord and identify which chords are formed by a list of notes.
 
-To run the example simply execute  
+To run the example simply run  
 java Main
 
-'Chord' - Gets chord composition  
-'Bm7' prints '= B D F# A'.  
-This means B, D, A and F# form a Bm7 chord.
-
-'Note1 Note2 Note3...' - Gets chords formed by Note1, Note2, Note3...  
-'B D F# A' prints '[Bm7, D6/B]'
-
-'Chord + n' - Sums Chord with n semitones (half steps)  
+**'Chord+n'** - Adds n semitones (half steps) to 'Chord'   
 'C+1' prints 'C#'.  
 'B+4' prints 'Eb'.  
 And obviously, 'C+12' prints 'C'.
 
-'Chord + n' - Subtracts n semitones  
+**'Chord-n'** - Subtracts n semitones  
 'F#-1' prints 'F'. 
+
+**'Chord'** - Gets 'Chord' composition  
+'Bm7' prints '= B D F# A'.  
+This means B, D, A and F# form a Bm7 chord.
+
+**'Note1 Note2 Note3...'** - Gets chords formed by Note1, Note2, Note3...  
+'B D F# A' prints '[Bm7, D6/B]'
 
 
 # Syntax
