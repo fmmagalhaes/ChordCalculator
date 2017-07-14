@@ -5,13 +5,20 @@ To run the example simply execute
 java Main
 
 'Chord' - Gets chord composition  
-(E.g.) 'B' prints '= B Eb F#'.  
-This means B Eb and F# form a B chord.
+'Bm7' prints '= B D F# A'.  
+This means B, D, A and F# form a Bm7 chord.
 
-'Chord + n' - Sums Chord with n semitones  
-'C + 1' prints 'C#'.  
-'B + 4' prints 'Eb'.  
-And obviously, 'C + 12' prints 'C'.
+'Note1 Note2 Note3...' - Gets chords formed by Note1, Note2, Note3...  
+'B D F# A' prints '[Bm7, D6/B]'
+
+'Chord + n' - Sums Chord with n semitones (half steps)  
+'C+1' prints 'C#'.  
+'B+4' prints 'Eb'.  
+And obviously, 'C+12' prints 'C'.
+
+'Chord + n' - Subtracts n semitones  
+'F#-1' prints 'F'. 
+
 
 # Syntax
 
@@ -26,5 +33,5 @@ calc.getNotes("Bm7"); // returns the list [B, D, F#, A]
 calc.getNotes("D6"); // returns the list [D, F#, A, B]  
 
 String[] notes = {"B", "D", "F#", "A"};  
-calc.getChord(Arrays.asList(notes)); // returns the list [Bm7, D6] (if possible, first chord's root is first note in the argument. In this case, "Bm7" comes first, because B was the first note)
+calc.getChord(Arrays.asList(notes)); // returns the list [Bm7, D6/B] (if possible, first chord's root is first note in the argument. In this case, "Bm7" comes first, because B was the first note)
 ```

@@ -16,7 +16,7 @@ public class Main {
 
 		ChordCalculator calc = new ChordCalculator();
 
-		System.out.println("usage: 'Chord' or 'Chord+n'");
+		System.out.println("usage: check README.md");
 		System.out.println("example: 'C#m+3'");
 		String line = "";
 		while ((line = bis.readLine()) != null) {
