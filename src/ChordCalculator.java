@@ -205,6 +205,48 @@ public class ChordCalculator {
 		return notes;
 	}
 
+	/**
+	 ** @param chord
+	 ** @return the root of the given chord 
+	 */
+	public String getRootNote(String chord) throws UnknownNoteException {
+		// the return value will be one of the notes in Chords.NOTES
+		if (chord.length() > 1)
+			chord = chord.substring(0, 2);
+
+		if (!chord.contains("b") && !chord.contains("#"))
+			chord = chord.substring(0, 1);
+
+		// check if chord matches any note in NOTES
+		for (String note : Chords.NOTES)
+			if (chord.equals(note))
+				return note;
+
+		// check on alternative notes representation (A# instead of Bb, etc.)
+		for (int i = 0; i < Chords.NOTES_ALT.length; i++)
+			if (chord.equals(Chords.NOTES_ALT[i]))
+				return Chords.NOTES[i];
+
+		throw new UnknownNoteException();
+	}
+
+	/**
+	 ** @param chord
+	 ** @return the symbols of the given chord (ex: M7, 7, m7)
+	 */
+	public String getSymbols(String chord) {
+		String sharpFlat = "";
+		if (chord.length() > 1)
+			sharpFlat = chord.substring(1, 2);
+
+		if (sharpFlat.equals("b") || sharpFlat.equals("#"))
+			chord = chord.substring(2);
+		else
+			chord = chord.substring(1);
+
+		return cleanChord(chord);
+	}
+
 	// checks if a list of notes contains the note equivalent to root+interval
 	private boolean containsInterval(List<String> notes, int interval) {
 		int m = (Integer) Utils.getKeyFromValue(intTonote, notes.get(0));
@@ -229,7 +271,7 @@ public class ChordCalculator {
 
 	// based on https://github.com/jsrmath/sharp11
 	// trying different roots means trying different inversions
-	public String tryRoot(List<String> notes, String bass) throws UnknownNoteException {
+	private String tryRoot(List<String> notes, String bass) throws UnknownNoteException {
 		String root = getRootNote(notes.get(0));
 		String symbols = "";
 		boolean noThird = false;
@@ -355,43 +397,8 @@ public class ChordCalculator {
 		return root + symbols;
 	}
 
-	// returns the root of the given chord
-	// can even change A# to Bb, etc, according to Chords.NOTES
-	public String getRootNote(String chord) throws UnknownNoteException {
-		if (chord.length() > 1)
-			chord = chord.substring(0, 2);
-
-		if (!chord.contains("b") && !chord.contains("#"))
-			chord = chord.substring(0, 1);
-
-		// check if chord matches any note in NOTES
-		for (String note : Chords.NOTES)
-			if (chord.equals(note))
-				return note;
-
-		// check on alternative notes representation (A# instead of Bb, etc.)
-		for (int i = 0; i < Chords.NOTES_ALT.length; i++)
-			if (chord.equals(Chords.NOTES_ALT[i]))
-				return Chords.NOTES[i];
-
-		throw new UnknownNoteException();
-	}
-
-	// returns the symbols of the given chord (ex: M7, 7, m7)
-	public String getSymbols(String chord) {
-		String sharpFlat = "";
-		if (chord.length() > 1)
-			sharpFlat = chord.substring(1, 2);
-
-		if (sharpFlat.equals("b") || sharpFlat.equals("#"))
-			chord = chord.substring(2);
-		else
-			chord = chord.substring(1);
-
-		return cleanChord(chord);
-	}
-
-	public String cleanChord(String chord) {
+	// removes unknown symbols
+	private String cleanChord(String chord) {
 		String regex = Utils.arrayToStringRegex(Chords.SYMBOLS, "|");
 		String charsToRemove = chord.replaceAll(regex, "");
 		for (int i = 0; i < charsToRemove.length(); i++)

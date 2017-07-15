@@ -50,17 +50,14 @@ public class Main {
 				} else { // if (line.matches((chordMatch))) {
 					/// COMPOSITION
 					String chord = line;
-					List<String> list = null;
-					list = calc.getNotes(chord);
+					List<String> notes = null;
+					notes = calc.getNotes(chord);
 
 					// for debugging
 					System.out.println("Root = " + calc.getRootNote(chord));
 					System.out.println("Symbols = " + calc.getSymbols(chord));
-
-					String composition = "";
-					for (String note : list)
-						composition += note + " ";
-					System.out.println("= " + composition + "\n");
+					
+					System.out.println(notes + "\n");
 				}
 			} catch (UnknownNoteException e) {
 				System.out.println(e.getMessage() + "\n");

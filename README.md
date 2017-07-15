@@ -14,7 +14,7 @@ And obviously, 'C+12' prints 'C'.
 'F#-1' prints 'F'. 
 
 **'Chord'** - Gets 'Chord' composition  
-'Bm7' prints '= B D F# A'.  
+'Bm7' prints '= [B, D, F#, A]'.  
 This means B, D, A and F# form a Bm7 chord.
 
 **'Note1 Note2 Note3...'** - Gets chords formed by Note1, Note2, Note3...  
