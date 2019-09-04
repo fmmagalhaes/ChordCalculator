@@ -23,7 +23,7 @@ This means B, D, A and F# form a Bm7 chord.
 
 # Syntax
 
-```
+```java
 ChordCalculator calc = new ChordCalculator();  
 
 calc.addSemitones("C#", 3); // returns E  
